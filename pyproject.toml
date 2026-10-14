@@ -1,0 +1,57 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "taperoll"
+version = "0.1.0"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.11"
+
+[project.scripts]
+taperoll = "taperoll.cli:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["e2e: drives the real TUI in a pseudo-terminal (slower)"]
+
+[tool.coverage.run]
+source = ["taperoll"]
+branch = true
+# Also measure the app when the e2e tests launch it as a subprocess.
+patch = ["subprocess"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+exclude_also = ["if __name__ == .__main__.:"]
+
+[tool.ruff]
+target-version = "py311"
+
+[tool.ruff.lint]
+select = [
+  "E",   # pycodestyle
+  "F",   # pyflakes
+  "W",   # pycodestyle warnings
+  "I",   # isort
+  "UP",  # pyupgrade
+  "B",   # bugbear
+  "SIM", # simplify
+  "C4",  # comprehensions
+  "RET", # return statements
+  "PIE", # misc lints
+  "RUF", # ruff-specific
+]
+ignore = [
+  "E501",    # long lines are left to the formatter; strings it can't wrap are fine
+  "RUF001",  # the UI deliberately uses typographic characters (–, ›, ×, …)
+  "RUF002",
+  "RUF003",
+]
+
+[tool.ty.environment]
+python-version = "3.11"
+python = ".pixi/envs/dev"  # not a stray .venv
+extra-paths = ["tests"]

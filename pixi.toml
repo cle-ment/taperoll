@@ -1,0 +1,61 @@
+[workspace]
+name = "taperoll"
+channels = ["conda-forge"]
+preview = ["pixi-build"]
+platforms = ["osx-arm64", "linux-aarch64", "linux-64"]
+
+[dependencies]
+python = ">=3.11"
+numpy = ">=1.24"
+python-sounddevice = ">=0.4.6"
+ffmpeg = "*"
+rclone = "*"
+
+[feature.dev.dependencies]
+pytest = ">=8.0"
+pytest-cov = ">=7.0"
+coverage = ">=7.10"
+ruff = ">=0.15"
+ty = "*"
+pexpect = ">=4.9"
+pyte = ">=0.8"
+pre-commit = ">=4.0"
+
+[environments]
+dev = ["dev"]
+
+[tasks]
+start = "python -m taperoll"
+devices = "python -m taperoll --list-devices"
+upload = "python -m taperoll --upload"
+
+[feature.dev.tasks]
+test = "pytest"
+test-unit = "pytest -m 'not e2e'"
+test-e2e = "pytest -m e2e"
+cov = "pytest --cov --cov-report=term-missing"
+lint = "ruff check ."
+fmt = "ruff format ."
+fmt-check = "ruff format --check ."
+typecheck = "ty check"
+check = { depends-on = ["lint", "fmt-check", "typecheck", "cov"] }
+install-hooks = "pre-commit install --hook-type pre-commit --hook-type pre-push"
+
+[package]
+name = "taperoll"
+version = "0.1.0"
+license = "MIT"
+license-file = "LICENSE"
+
+[package.build]
+backend = { name = "pixi-build-python", version = "*" }
+
+[package.host-dependencies]
+hatchling = "*"
+
+[package.run-dependencies]
+python = ">=3.11"
+numpy = ">=1.24"
+python-sounddevice = ">=0.4.6"
+ffmpeg = "*"
+rclone = "*"

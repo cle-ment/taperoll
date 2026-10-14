@@ -1,0 +1,11 @@
+__pycache__/
+songs.json
+.venv
+recordings/
+setlists/
+setlist.txt
+taperoll.log
+.pixi/
+config.toml
+.coverage*
+.DS_Store

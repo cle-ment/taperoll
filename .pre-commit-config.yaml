@@ -1,0 +1,34 @@
+# Runs the tools from the pixi dev environment, so versions match pixi.lock.
+# Install with: pixi run -e dev install-hooks
+repos:
+  - repo: local
+    hooks:
+      - id: ruff-check
+        name: ruff check
+        entry: pixi run -e dev ruff check --fix
+        language: system
+        types: [python]
+      - id: ruff-format
+        name: ruff format
+        entry: pixi run -e dev ruff format
+        language: system
+        types: [python]
+      - id: ty
+        name: ty check
+        entry: pixi run -e dev ty check
+        language: system
+        types: [python]
+        pass_filenames: false
+      - id: unit-tests
+        name: unit tests
+        entry: pixi run -e dev test-unit
+        language: system
+        types: [python]
+        pass_filenames: false
+      - id: all-tests
+        name: all tests incl. end-to-end
+        entry: pixi run -e dev test
+        language: system
+        types: [python]
+        pass_filenames: false
+        stages: [pre-push]

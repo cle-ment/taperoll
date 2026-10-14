@@ -1,0 +1,21 @@
+// Project settings for Zed: run the ruff and ty pinned in the pixi dev
+// environment (`pixi install -e dev`) instead of Zed's bundled ones, so the
+// editor reports the same diagnostics as `pixi run lint` / `pixi run typecheck`.
+// Everything else (language server list, format on save) comes from your
+// global settings; ty finds the project's Python via [tool.ty.environment].
+{
+  "lsp": {
+    "ruff": {
+      "binary": {
+        "path": ".pixi/envs/dev/bin/ruff",
+        "arguments": ["server"],
+      },
+    },
+    "ty": {
+      "binary": {
+        "path": ".pixi/envs/dev/bin/ty",
+        "arguments": ["server"],
+      },
+    },
+  },
+}

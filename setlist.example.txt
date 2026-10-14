@@ -1,0 +1,6 @@
+# Copy to setlist.txt: one song per line, '#' for comments.
+# Names are matched against songs.json (see songs.example.json).
+# Set 1
+Highway to Hell
+Paranoid
+Smells Like Teen Spirit
