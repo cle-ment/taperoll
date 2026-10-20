@@ -16,6 +16,7 @@ import numpy as np
 
 from .audio import LevelMeter
 from .session import Session
+from .takes import Take
 
 BAR_WIDTH = 36  # level meter bar width
 FRAME_SECONDS = 0.05  # ~20 fps
@@ -24,6 +25,7 @@ FOOTER = (
     "    [↑↓] setlist    [a] add    [d] del    [q] quit  "
 )
 BACKSPACE = ("KEY_BACKSPACE", "\x7f", "\b")
+DELETE = (*BACKSPACE, "KEY_DC")
 ENTER = ("\n", "\r")
 ESCAPE = "\x1b"
 
@@ -105,6 +107,7 @@ class Tui:
     def __init__(self, session: Session) -> None:
         self.session = session
         self.prompt: NamePrompt | BpmPrompt | None = None
+        self.confirm_delete: Take | None = None  # first ⌫ pressed on this take
 
     def render(self) -> list[Row]:
         s = self.session
@@ -164,13 +167,21 @@ class Tui:
             rows.append(_line(f"Recording: ● {elapsed}  {ts}", Style.RECORDING))
         else:
             rows.append(_line("Recording: ■ stopped"))
-        if s.pending_rating is not None:
-            rows.append(
-                _line(
-                    f'Rate take "{s.pending_rating.name}":  [1]–[5]   [0/Esc] skip',
-                    Style.INFO,
+        if (take := s.pending_rating) is not None:
+            if self.confirm_delete is take:
+                rows.append(
+                    _line(
+                        f'Delete take "{take.name}"?  [⌫] again to delete   [Esc] keep',
+                        Style.RECORDING,
+                    )
                 )
-            )
+            else:
+                rows.append(
+                    _line(
+                        f'Rate take "{take.name}":  [1]–[5]   [0/Esc] skip   [⌫] delete',
+                        Style.INFO,
+                    )
+                )
         rows.append([])
         rows += [_line(text, Style.DIM) for text in s.activity.lines()]
         return rows
@@ -224,7 +235,17 @@ class Tui:
         s = self.session
         if key == "q":
             return not s.can_quit
-        if len(key) == 1 and key in "12345" and s.pending_rating is not None:
+        pending = s.pending_rating
+        confirming = pending is not None and self.confirm_delete is pending
+        self.confirm_delete = None  # any other key leaves the confirmation
+        if key in DELETE and pending is not None:
+            if confirming:
+                s.discard()
+            else:
+                self.confirm_delete = pending
+        elif key == ESCAPE and confirming:
+            pass  # back to the rating prompt, still unrated
+        elif len(key) == 1 and key in "12345" and s.pending_rating is not None:
             s.rate(int(key))
         elif key in ("0", ESCAPE) and s.pending_rating is not None:
             s.rate(None)

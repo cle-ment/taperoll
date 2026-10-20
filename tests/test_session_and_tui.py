@@ -168,6 +168,15 @@ def test_stems_take_gets_a_stem_writer(tmp_path: Path) -> None:
     assert take.stem_writer.folder.name == f"{take.name}_stems.partial"
 
 
+def test_discarding_the_pending_take(env: Env) -> None:
+    env.record()
+    take = env.session.pending_rating
+    env.session.discard()
+    assert take is not None and take.rating.discarded
+    assert env.session.pending_rating is None
+    env.session.discard()  # nothing pending: no-op
+
+
 def test_shutdown_releases_the_pending_rating_quietly(env: Env) -> None:
     env.record()
     take = env.session.pending_rating
@@ -309,7 +318,10 @@ def test_render_while_recording_and_rating(tmp_path: Path) -> None:
     assert "Recording: ● 01:05  2026-10-08_20-14-03" in _screen(tui)
     env.session.toggle_recording()
     screen = _screen(tui)
-    assert 'Rate take "2026-10-08_20-14-03":  [1]–[5]   [0/Esc] skip' in screen
+    assert (
+        'Rate take "2026-10-08_20-14-03":  [1]–[5]   [0/Esc] skip   [⌫] delete'
+        in screen
+    )
     assert "Stems:     ● ON  1 ch, upload all" in screen
     env.session.audio.stems_unavailable = "device has only 1 input(s)"
     assert "Stems:     ● ON — unavailable: device has only 1 input(s)" in _screen(tui)
@@ -396,3 +408,28 @@ def test_keys_commands_and_quit(env: Env) -> None:
     assert env.session.metronome.active
     env.session.metronome.stop()
     assert not tui.handle_key("q")
+
+
+def test_keys_delete_take_needs_confirming(env: Env) -> None:
+    tui = Tui(env.session)
+    env.record()
+    take = env.session.pending_rating
+    assert take is not None
+    tui.handle_key("KEY_BACKSPACE")
+    assert 'Delete take "2026-10-08_20-14-03"?  [⌫] again to delete' in _screen(tui)
+    tui.handle_key("\x1b")  # Esc keeps the take, still waiting for its rating
+    assert env.session.pending_rating is take
+    assert 'Rate take "2026-10-08_20-14-03"' in _screen(tui)
+    tui.handle_key("\x7f")
+    tui.handle_key("KEY_DC")
+    assert take.rating.discarded and env.session.pending_rating is None
+    tui.handle_key("\x7f")  # nothing pending: ignored
+    assert tui.confirm_delete is None
+
+
+def test_keys_rating_after_backspace_leaves_the_confirmation(env: Env) -> None:
+    tui = Tui(env.session)
+    env.record()
+    tui.handle_key("\x7f")
+    tui.handle_key("4")
+    assert env.log[-1].startswith("★★★★☆")

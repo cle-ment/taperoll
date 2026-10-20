@@ -55,6 +55,18 @@ def test_skipping_the_rating_keeps_the_plain_name(app: App, key: str) -> None:
     assert "rating" not in name
 
 
+def test_deleting_a_take(app: App) -> None:
+    tui = app.start()
+    tui.record()
+    tui.wait_for("Rate take")
+    tui.press("backspace")
+    tui.wait_for("Delete take")
+    tui.press("backspace")
+    tui.wait_for("✗ Deleted")
+    assert tui.quit() == 0
+    assert not list(app.recordings.glob("*"))
+
+
 def test_starting_the_next_take_skips_the_previous_rating(app: App) -> None:
     tui = app.start()
     tui.record()

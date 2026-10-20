@@ -24,16 +24,23 @@ class RatingSlot:
     """Hand-off of a take's rating from the UI to its processing thread.
 
     The thread blocks in wait() until the UI calls resolve() with a rating
-    (1–5) or None (skipped). Only the first resolve() counts.
+    (1–5) or None (skipped), or discard() to delete the take. Only the first
+    call counts.
     """
 
     def __init__(self) -> None:
         self.rating: int | None = None
+        self.discarded = False
         self._done = threading.Event()
 
     def resolve(self, rating: int | None) -> None:
         if not self._done.is_set():
             self.rating = rating
+            self._done.set()
+
+    def discard(self) -> None:
+        if not self._done.is_set():
+            self.discarded = True
             self._done.set()
 
     def wait(self) -> int | None:
@@ -135,6 +142,7 @@ class TakeProcessor:
     1. save the (normalised) mixdown WAV, encode it to MP3
     2. finish the stems: drop silent ones, convert to FLAC/MP3
     3. wait for the rating, then rename mixdown and stems folder accordingly
+       (or delete them all if the take was discarded)
 
     Uploading is separate: `--upload` sends what's in the recordings folder.
     """
@@ -148,7 +156,7 @@ class TakeProcessor:
             self.activity.add(text, key=(take.name, step))
 
         status("save", "Saving…")
-        mixdown = self._save_mixdown(take)
+        mixdown = wav = self._save_mixdown(take)
         size_mb = mixdown.stat().st_size / 1024 / 1024
         duration = sum(len(f) for f in take.frames) / self.config.audio.sample_rate
         status("save", f"Saved  {mixdown.name}  {duration:.0f}s / {size_mb:.1f} MB")
@@ -172,6 +180,13 @@ class TakeProcessor:
 
         # Hold the final names until the take is rated (or the rating is skipped).
         rating = take.rating.wait()
+        if take.rating.discarded:
+            wav.unlink(missing_ok=True)  # still there if MP3 encoding kept it
+            mixdown.unlink(missing_ok=True)
+            if stems_dir is not None:
+                shutil.rmtree(stems_dir, ignore_errors=True)
+            self.activity.add(f"✗ Deleted  {take.name}")
+            return
         if rating is not None:
             mixdown = mixdown.rename(with_rating(mixdown, rating))
             if stems_dir is not None:

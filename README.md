@@ -54,6 +54,7 @@ Why pixi rather than `uv`? On macOS, uv's and Homebrew's Python link against App
 | `d` | Remove the current / selected song from `setlist.txt` |
 | `↑` / `↓` | Navigate setlist (when `setlist.txt` is present) |
 | `1`–`5` | Rate the last take (`0` / `Esc` skips) |
+| `⌫` `⌫` | Delete the last take (press Backspace twice) |
 | `q` | Quit (when not recording; waits for pending encodes to finish) |
 
 Stopping a recording immediately saves and encodes it in the background. You can start the next take straight away.
@@ -63,6 +64,8 @@ Stopping a recording immediately saves and encodes it in the background. You can
 After a take stops, a prompt asks you to rate it from 1 to 5. Saving the final files waits for the rating, and the rating is appended to the filename, e.g. `circles_2026-10-08_20-14-03_rating=4.mp3`, so good takes are easy to find later by searching for `rating=4` or `rating=5`.
 
 Skipping (`0` / `Esc`), starting the next take with `r`, or quitting leaves the take unrated, under its plain name.
+
+If the take was just an accident, press Backspace to delete it instead: the prompt turns red and asks for confirmation, a second Backspace deletes the mixdown and its stems, and `Esc` goes back to rating it.
 
 ## Stems
 

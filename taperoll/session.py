@@ -161,6 +161,12 @@ class Session:
         else:
             self.activity.add(f"{'★' * rating}{'☆' * (5 - rating)}  {take.name}")
 
+    def discard(self) -> None:
+        """Delete the take waiting for its rating, mixdown and stems alike."""
+        take, self.pending_rating = self.pending_rating, None
+        if take is not None:
+            take.rating.discard()
+
     # ── songs and setlist ─────────────────────────────────────────────────────
 
     def select_song(self, name: str) -> None:

@@ -125,6 +125,18 @@ def test_unrated_take_keeps_its_plain_name(config: Config) -> None:
     assert _recordings(config) == [f"{TAKE}.wav"]
 
 
+def test_discarded_take_is_deleted_with_its_stems(config: Config) -> None:
+    config = replace(config, recording=RecordingConfig(delete_wav_after_encode=False))
+    take = Take(
+        ts=TS, song_name="Circles", frames=_frames(3), stem_writer=_stem_writer(config)
+    )
+    take.rating.discard()
+    activity = ActivityLog(maxlen=20)
+    TakeProcessor(config, activity).process(take)
+    assert _recordings(config) == []
+    assert activity.lines()[-1] == f"✗ Deleted  {TAKE}"
+
+
 def test_mp3_encoding(config: Config) -> None:
     config = replace(config, recording=RecordingConfig())
     activity = _process(config, 3)
